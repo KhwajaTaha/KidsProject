@@ -4,52 +4,116 @@ using UnityEngine;
 
 public class MatchResolver : MonoBehaviour
 {
-    public struct Pair { public CardView a, b; }
+    [System.Serializable]
+    public struct Pair
+    {
+        public CardView a;
+        public CardView b;
+    }
 
+    [Header("Timing")]
     [SerializeField] private float mismatchHoldTime = 0.55f;
 
     private readonly Queue<Pair> _queue = new Queue<Pair>();
-    private bool _running;
+    private Coroutine _runner;
 
-    public System.Action<bool> OnPairResolved; // true=match, false=mismatch
+    // GameController subscribes to this
+    public System.Action<bool> OnPairResolved;
 
     public void Enqueue(CardView a, CardView b)
     {
+        if (a == null || b == null) return;
         _queue.Enqueue(new Pair { a = a, b = b });
-        if (!_running) StartCoroutine(Run());
+
+        if (_runner == null)
+            _runner = StartCoroutine(ProcessQueue());
     }
 
-    private IEnumerator Run()
+    private IEnumerator ProcessQueue()
     {
-        _running = true;
-
         while (_queue.Count > 0)
         {
-            var p = _queue.Dequeue();
+            var pair = _queue.Dequeue();
 
-            if (p.a == null || p.b == null) continue;
-            if (p.a.State != CardView.CardState.FaceUp || p.b.State != CardView.CardState.FaceUp) continue;
-
-            bool match = p.a.FaceId == p.b.FaceId;
-
-            if (match)
+            // If cards got destroyed or changed state unexpectedly, skip safely
+            if (pair.a == null || pair.b == null)
             {
-                p.a.SetMatched();
-                p.b.SetMatched();
-                OnPairResolved?.Invoke(true);
+                yield return null;
+                continue;
+            }
+
+            // Wait until both finishes flipping up (important!)
+            // This prevents missing the "FaceUp" state if comparison happens too early.
+            yield return WaitUntilFaceUpOrInvalid(pair.a, pair.b);
+
+            // If they are no longer valid, skip
+            if (pair.a == null || pair.b == null) { yield return null; continue; }
+            if (pair.a.State != CardView.CardState.FaceUp || pair.b.State != CardView.CardState.FaceUp)
+            {
+                yield return null;
+                continue;
+            }
+
+            bool isMatch = pair.a.FaceId == pair.b.FaceId;
+
+            if (isMatch)
+            {
+                pair.a.SetMatched();
+                pair.b.SetMatched();
             }
             else
             {
-                OnPairResolved?.Invoke(false);
-                yield return new WaitForSecondsRealtime(mismatchHoldTime);
+                // Let player see mismatch briefly
+                float t = 0f;
+                while (t < mismatchHoldTime)
+                {
+                    t += Time.unscaledDeltaTime;
+                    yield return null;
+                }
 
-                if (p.a.State == CardView.CardState.FaceUp) p.a.Hide();
-                if (p.b.State == CardView.CardState.FaceUp) p.b.Hide();
+                // Flip back if still face up (player might have interacted in the meantime)
+                if (pair.a.State == CardView.CardState.FaceUp) pair.a.Hide();
+                if (pair.b.State == CardView.CardState.FaceUp) pair.b.Hide();
             }
+
+            // IMPORTANT: always invoke, so GameController updates score/hud
+            OnPairResolved?.Invoke(isMatch);
 
             yield return null;
         }
 
-        _running = false;
+        _runner = null;
+    }
+
+    private IEnumerator WaitUntilFaceUpOrInvalid(CardView a, CardView b)
+    {
+        // Safety timeout so we never get stuck if something goes wrong
+        float timeout = 2f;
+        float t = 0f;
+
+        while (t < timeout)
+        {
+            if (a == null || b == null) yield break;
+
+            bool aOk = a.State == CardView.CardState.FaceUp || a.State == CardView.CardState.Matched;
+            bool bOk = b.State == CardView.CardState.FaceUp || b.State == CardView.CardState.Matched;
+
+            // For queued evaluation we specifically want FaceUp, but allow Matched to pass too.
+            if (aOk && bOk) yield break;
+
+            t += Time.unscaledDeltaTime;
+            yield return null;
+        }
+    }
+
+    // Optional: clear queue if restarting mid-process
+    public void Clear()
+    {
+        _queue.Clear();
+        if (_runner != null)
+        {
+            StopCoroutine(_runner);
+            _runner = null;
+        }
     }
 }

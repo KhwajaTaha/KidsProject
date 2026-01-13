@@ -1,46 +1,132 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
+[ExecuteAlways]
 [RequireComponent(typeof(GridLayoutGroup))]
 public class BoardLayoutFitter : MonoBehaviour
 {
+    [Header("Grid Size")]
+    [Min(1)][SerializeField] private int columns = 4;
+    [Min(1)][SerializeField] private int rows = 4;
+
+    [Header("Sizing Source")]
+    [Tooltip("If null, uses this RectTransform.")]
     [SerializeField] private RectTransform container;
-    [SerializeField] private int columns = 4;
-    [SerializeField] private int rows = 4;
-    [SerializeField] private Vector2 padding = new Vector2(16, 16);
+
+    [Header("Layout")]
     [SerializeField] private Vector2 spacing = new Vector2(12, 12);
+    [SerializeField] private Vector2 padding = new Vector2(16, 16);
 
     private GridLayoutGroup _grid;
+    private RectTransform _selfRect;
+    private Coroutine _co;
 
     private void Awake()
     {
         _grid = GetComponent<GridLayoutGroup>();
-        _grid.spacing = spacing;
-        _grid.padding = new RectOffset((int)padding.x, (int)padding.x, (int)padding.y, (int)padding.y);
+        _selfRect = GetComponent<RectTransform>();
+        ApplyStaticGridSettings();
+    }
+
+    private void OnEnable()
+    {
+        _grid = GetComponent<GridLayoutGroup>();
+        _selfRect = GetComponent<RectTransform>();
+        ApplyStaticGridSettings();
+
+        // In play mode, wait for layout to settle before first calc
+        if (Application.isPlaying)
+        {
+            if (_co != null) StopCoroutine(_co);
+            _co = StartCoroutine(DelayedRecalc());
+        }
+        else
+        {
+            Recalculate();
+        }
+    }
+
+    private void OnDisable()
+    {
+        if (_co != null) StopCoroutine(_co);
+        _co = null;
     }
 
     public void SetGrid(int cols, int rws)
     {
-        columns = cols;
-        rows = rws;
+        columns = Mathf.Max(1, cols);
+        rows = Mathf.Max(1, rws);
+        ApplyStaticGridSettings();
+        if (Application.isPlaying)
+        {
+            if (_co != null) StopCoroutine(_co);
+            _co = StartCoroutine(DelayedRecalc());
+        }
+        else
+        {
+            Recalculate();
+        }
+    }
+
+    private IEnumerator DelayedRecalc()
+    {
+        // Wait 1-2 frames so Canvas/Layouts compute correct rects
+        yield return null;
+        yield return null;
         Recalculate();
+        _co = null;
+    }
+
+    private void ApplyStaticGridSettings()
+    {
+        if (_grid == null) _grid = GetComponent<GridLayoutGroup>();
+
+        _grid.spacing = spacing;
+        _grid.padding = new RectOffset((int)padding.x, (int)padding.x, (int)padding.y, (int)padding.y);
+
+        // IMPORTANT: keep layout stable
+        _grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+        _grid.constraintCount = columns;
+        _grid.childAlignment = TextAnchor.MiddleCenter;
     }
 
     public void Recalculate()
     {
         if (_grid == null) _grid = GetComponent<GridLayoutGroup>();
-        if (container == null) container = (RectTransform)transform;
+        if (_selfRect == null) _selfRect = GetComponent<RectTransform>();
 
-        var rect = container.rect;
-        if (rect.width <= 0 || rect.height <= 0) return;
+        var source = container != null ? container : _selfRect;
 
-        var w = rect.width - _grid.padding.left - _grid.padding.right - (_grid.spacing.x * (columns - 1));
-        var h = rect.height - _grid.padding.top - _grid.padding.bottom - (_grid.spacing.y * (rows - 1));
+        // Force UI system to update its layout calculations
+        Canvas.ForceUpdateCanvases();
+        LayoutRebuilder.ForceRebuildLayoutImmediate(source);
 
-        var cell = Mathf.Floor(Mathf.Min(w / columns, h / rows));
+        var rect = source.rect;
+        if (rect.width <= 1f || rect.height <= 1f) return; // still not ready
+
+        float usableW = rect.width - _grid.padding.left - _grid.padding.right - _grid.spacing.x * (columns - 1);
+        float usableH = rect.height - _grid.padding.top - _grid.padding.bottom - _grid.spacing.y * (rows - 1);
+
+        float cell = Mathf.Floor(Mathf.Min(usableW / columns, usableH / rows));
+        cell = Mathf.Max(1f, cell);
+
         _grid.cellSize = new Vector2(cell, cell);
     }
 
+    private void OnRectTransformDimensionsChange()
+    {
+        // When screen changes / resolution changes, recalc
+        if (!isActiveAndEnabled) return;
 
-    private void OnRectTransformDimensionsChange() => Recalculate();
+        if (Application.isPlaying)
+        {
+            if (_co != null) StopCoroutine(_co);
+            _co = StartCoroutine(DelayedRecalc());
+        }
+        else
+        {
+            Recalculate();
+        }
+    }
 }

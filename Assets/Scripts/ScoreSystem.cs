@@ -1,5 +1,4 @@
 using UnityEngine;
-
 public class ScoreSystem
 {
     public int Score { get; private set; }
@@ -7,7 +6,15 @@ public class ScoreSystem
     public int Turns { get; private set; }
     public int Combo { get; private set; }
 
-    public void RegisterTurn() => Turns++;
+    public void Reset()
+    {
+        Score = 0;
+        Matches = 0;
+        Turns = 0;
+        Combo = 0;
+    }
+
+    public void RegisterFlip() => Turns++;
 
     public void RegisterMatch()
     {
@@ -22,5 +29,13 @@ public class ScoreSystem
     {
         Combo = 0;
         Score = Mathf.Max(0, Score - 10);
+    }
+
+    public void LoadFrom(int matches, int turns, int score, int combo)
+    {
+        Matches = matches;
+        Turns = turns;
+        Score = score;
+        Combo = combo;
     }
 }
