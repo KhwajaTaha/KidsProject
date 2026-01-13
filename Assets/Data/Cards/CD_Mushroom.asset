@@ -12,5 +12,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2c1eebd030e960e48a8b227fdaaa6990, type: 3}
   m_Name: CD_Mushroom
   m_EditorClassIdentifier: 
-  id: 
-  faceSprite: {fileID: 0}
+  id: mushroom
+  faceSprite: {fileID: 21300000, guid: 36934a5f26203784e93d52ed9f4a9f3a, type: 3}

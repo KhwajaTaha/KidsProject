@@ -3,44 +3,66 @@ using UnityEngine;
 
 public class SaveSystem : MonoBehaviour
 {
-    private string PathFor(BoardConfig config)
-        => System.IO.Path.Combine(Application.persistentDataPath, "match_save.json");
+    private const string FileName = "match_save.json";
+
+    private string SavePath =>
+        Path.Combine(Application.persistentDataPath, FileName);
 
     public void Save(BoardConfig config, GameSaveData data)
     {
+        if (data == null)
+        {
+            Debug.LogWarning("SaveSystem.Save called with null data.");
+            return;
+        }
+
         try
         {
-            var json = JsonUtility.ToJson(data, prettyPrint: false);
-            File.WriteAllText(PathFor(config), json);
+            string json = JsonUtility.ToJson(data, true);
+            File.WriteAllText(SavePath, json);
         }
         catch (System.Exception e)
         {
-            Debug.LogWarning($"Save failed: {e.Message}");
+            Debug.LogError($"SaveSystem.Save failed: {e}");
         }
     }
-
     public bool TryLoad(BoardConfig config, out GameSaveData data)
     {
         data = null;
+
         try
         {
-            var path = PathFor(config);
-            if (!File.Exists(path)) return false;
+            if (!File.Exists(SavePath))
+                return false;
 
-            var json = File.ReadAllText(path);
+            string json = File.ReadAllText(SavePath);
+            if (string.IsNullOrEmpty(json))
+                return false;
+
             data = JsonUtility.FromJson<GameSaveData>(json);
             return data != null;
         }
         catch (System.Exception e)
         {
-            Debug.LogWarning($"Load failed: {e.Message}");
+            Debug.LogError($"SaveSystem.TryLoad failed: {e}");
             return false;
         }
     }
-
     public void Clear(BoardConfig config)
     {
-        var path = PathFor(config);
-        if (File.Exists(path)) File.Delete(path);
+        try
+        {
+            if (File.Exists(SavePath))
+                File.Delete(SavePath);
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"SaveSystem.Clear failed: {e}");
+        }
+    }
+
+    public bool HasSave()
+    {
+        return File.Exists(SavePath);
     }
 }

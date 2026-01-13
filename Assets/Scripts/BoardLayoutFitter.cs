@@ -35,7 +35,6 @@ public class BoardLayoutFitter : MonoBehaviour
         _selfRect = GetComponent<RectTransform>();
         ApplyStaticGridSettings();
 
-        // In play mode, wait for layout to settle before first calc
         if (Application.isPlaying)
         {
             if (_co != null) StopCoroutine(_co);
@@ -71,7 +70,6 @@ public class BoardLayoutFitter : MonoBehaviour
 
     private IEnumerator DelayedRecalc()
     {
-        // Wait 1-2 frames so Canvas/Layouts compute correct rects
         yield return null;
         yield return null;
         Recalculate();
@@ -85,7 +83,6 @@ public class BoardLayoutFitter : MonoBehaviour
         _grid.spacing = spacing;
         _grid.padding = new RectOffset((int)padding.x, (int)padding.x, (int)padding.y, (int)padding.y);
 
-        // IMPORTANT: keep layout stable
         _grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
         _grid.constraintCount = columns;
         _grid.childAlignment = TextAnchor.MiddleCenter;
@@ -98,7 +95,6 @@ public class BoardLayoutFitter : MonoBehaviour
 
         var source = container != null ? container : _selfRect;
 
-        // Force UI system to update its layout calculations
         Canvas.ForceUpdateCanvases();
         LayoutRebuilder.ForceRebuildLayoutImmediate(source);
 
@@ -116,7 +112,6 @@ public class BoardLayoutFitter : MonoBehaviour
 
     private void OnRectTransformDimensionsChange()
     {
-        // When screen changes / resolution changes, recalc
         if (!isActiveAndEnabled) return;
 
         if (Application.isPlaying)

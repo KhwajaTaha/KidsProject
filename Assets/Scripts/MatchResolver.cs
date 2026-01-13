@@ -17,7 +17,6 @@ public class MatchResolver : MonoBehaviour
     private readonly Queue<Pair> _queue = new Queue<Pair>();
     private Coroutine _runner;
 
-    // GameController subscribes to this
     public System.Action<bool> OnPairResolved;
 
     public void Enqueue(CardView a, CardView b)
@@ -35,18 +34,14 @@ public class MatchResolver : MonoBehaviour
         {
             var pair = _queue.Dequeue();
 
-            // If cards got destroyed or changed state unexpectedly, skip safely
             if (pair.a == null || pair.b == null)
             {
                 yield return null;
                 continue;
             }
 
-            // Wait until both finishes flipping up (important!)
-            // This prevents missing the "FaceUp" state if comparison happens too early.
             yield return WaitUntilFaceUpOrInvalid(pair.a, pair.b);
 
-            // If they are no longer valid, skip
             if (pair.a == null || pair.b == null) { yield return null; continue; }
             if (pair.a.State != CardView.CardState.FaceUp || pair.b.State != CardView.CardState.FaceUp)
             {
@@ -63,7 +58,6 @@ public class MatchResolver : MonoBehaviour
             }
             else
             {
-                // Let player see mismatch briefly
                 float t = 0f;
                 while (t < mismatchHoldTime)
                 {
@@ -71,12 +65,9 @@ public class MatchResolver : MonoBehaviour
                     yield return null;
                 }
 
-                // Flip back if still face up (player might have interacted in the meantime)
                 if (pair.a.State == CardView.CardState.FaceUp) pair.a.Hide();
                 if (pair.b.State == CardView.CardState.FaceUp) pair.b.Hide();
             }
-
-            // IMPORTANT: always invoke, so GameController updates score/hud
             OnPairResolved?.Invoke(isMatch);
 
             yield return null;
@@ -87,7 +78,6 @@ public class MatchResolver : MonoBehaviour
 
     private IEnumerator WaitUntilFaceUpOrInvalid(CardView a, CardView b)
     {
-        // Safety timeout so we never get stuck if something goes wrong
         float timeout = 2f;
         float t = 0f;
 
@@ -98,7 +88,6 @@ public class MatchResolver : MonoBehaviour
             bool aOk = a.State == CardView.CardState.FaceUp || a.State == CardView.CardState.Matched;
             bool bOk = b.State == CardView.CardState.FaceUp || b.State == CardView.CardState.Matched;
 
-            // For queued evaluation we specifically want FaceUp, but allow Matched to pass too.
             if (aOk && bOk) yield break;
 
             t += Time.unscaledDeltaTime;
@@ -106,7 +95,6 @@ public class MatchResolver : MonoBehaviour
         }
     }
 
-    // Optional: clear queue if restarting mid-process
     public void Clear()
     {
         _queue.Clear();

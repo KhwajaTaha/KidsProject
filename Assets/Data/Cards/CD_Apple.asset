@@ -12,5 +12,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2c1eebd030e960e48a8b227fdaaa6990, type: 3}
   m_Name: CD_Apple
   m_EditorClassIdentifier: 
-  id: 
-  faceSprite: {fileID: 0}
+  id: apple
+  faceSprite: {fileID: 21300000, guid: ce75939605f487c48a3af1f25d8ee804, type: 3}

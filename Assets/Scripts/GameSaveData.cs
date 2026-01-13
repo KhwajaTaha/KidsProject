@@ -11,5 +11,7 @@ public class GameSaveData
     public int score;
     public int combo;
 
-    public List<string> matchedInstanceIds;
+    public List<string> faceIdsByIndex = new List<string>();
+
+    public List<int> matchedIndices = new List<int>();
 }
