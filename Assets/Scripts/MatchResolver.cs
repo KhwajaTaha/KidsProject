@@ -27,7 +27,6 @@ public class MatchResolver : MonoBehaviour
         {
             var p = _queue.Dequeue();
 
-            // If something changed (matched already, flipped down etc.), skip gracefully
             if (p.a == null || p.b == null) continue;
             if (p.a.State != CardView.CardState.FaceUp || p.b.State != CardView.CardState.FaceUp) continue;
 
@@ -44,7 +43,6 @@ public class MatchResolver : MonoBehaviour
                 OnPairResolved?.Invoke(false);
                 yield return new WaitForSecondsRealtime(mismatchHoldTime);
 
-                // Hide only if still face-up and not matched
                 if (p.a.State == CardView.CardState.FaceUp) p.a.Hide();
                 if (p.b.State == CardView.CardState.FaceUp) p.b.Hide();
             }
