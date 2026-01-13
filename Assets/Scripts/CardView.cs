@@ -63,6 +63,8 @@ public class CardView : MonoBehaviour
     {
         State = up ? CardState.FlippingUp : CardState.FlippingDown;
 
+        button.interactable = false;
+
         float half = duration * 0.5f;
         var t = 0f;
 
@@ -89,5 +91,7 @@ public class CardView : MonoBehaviour
         transform.localScale = Vector3.one;
         State = up ? CardState.FaceUp : CardState.FaceDown;
         _flipRoutine = null;
+        button.interactable = (State != CardState.Matched);
+
     }
 }
