@@ -32,7 +32,7 @@ public class BoardLayoutFitter : MonoBehaviour
         if (container == null) container = (RectTransform)transform;
 
         var rect = container.rect;
-        if (rect.width <= 0 || rect.height <= 0) return; // avoids layout timing issues
+        if (rect.width <= 0 || rect.height <= 0) return;
 
         var w = rect.width - _grid.padding.left - _grid.padding.right - (_grid.spacing.x * (columns - 1));
         var h = rect.height - _grid.padding.top - _grid.padding.bottom - (_grid.spacing.y * (rows - 1));
