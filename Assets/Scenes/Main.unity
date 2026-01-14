@@ -680,10 +680,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   sfx: {fileID: 777716930}
-  flip: {fileID: 8300000, guid: 0a22fb6d46434ef4fbd638e7206dc13d, type: 3}
+  flip: {fileID: 8300000, guid: b68d2e5470ae69b49b1c19bd7b241016, type: 3}
   match: {fileID: 8300000, guid: 0a22fb6d46434ef4fbd638e7206dc13d, type: 3}
-  mismatch: {fileID: 8300000, guid: 0a22fb6d46434ef4fbd638e7206dc13d, type: 3}
-  gameOver: {fileID: 8300000, guid: 0a22fb6d46434ef4fbd638e7206dc13d, type: 3}
+  mismatch: {fileID: 8300000, guid: 48974c0153c9c0749b74a9ea556b78e0, type: 3}
+  gameOver: {fileID: 8300000, guid: 0692786ae711ab8428d34adb25682f0f, type: 3}
 --- !u!1 &715021299
 GameObject:
   m_ObjectHideFlags: 0
@@ -881,7 +881,7 @@ AudioSource:
   m_Enabled: 1
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
-  m_audioClip: {fileID: 8300000, guid: 0a22fb6d46434ef4fbd638e7206dc13d, type: 3}
+  m_audioClip: {fileID: 8300000, guid: ab1047d90cb396f4fb587a2907631891, type: 3}
   m_PlayOnAwake: 1
   m_Volume: 1
   m_Pitch: 1
